@@ -40,6 +40,10 @@ def log(log_file, xml_file):
       formated_date_time = strftime("%Y-%m-%d %H:%M:%S", localtime())
       log.write( "[  " + formated_date_time + "  ]" + "  :" + "  " + err_message ) 
   return
+  
+def help_syntax():
+  print("python sort_xml.py source_directory  ambulance1_directory ambulance2_directory ambulance3_directory")
+  return
 
 def main():
   source_directory = sys.argv[1]
