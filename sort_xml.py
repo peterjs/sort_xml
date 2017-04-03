@@ -53,7 +53,7 @@ def main():
         copy_file_to_dir(full_path_to_file, dial_directory)        
       elif sr_kod == "P21697063201":
         copy_file_to_dir(full_path_to_file, amb_directory)
-	  elif sr_kod == "P21697063203":
+      elif sr_kod == "P21697063203":
         copy_file_to_dir(full_path_to_file, amb2_directory)
       else:
         log("log.txt","chybny sr_kod " + str(sr_kod) + " v subore " + str(xml_file) +"\n")
