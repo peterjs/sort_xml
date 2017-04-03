@@ -1,5 +1,6 @@
 # coding=utf-8
 import os, fnmatch, shutil,sys
+from time import localtime, strftime
 
 def xmls_in_dir(directory):
   real_path = os.path.realpath(directory)
@@ -33,8 +34,11 @@ def copy_file_to_dir(vstup_subor, vystup_zlozka):
   shutil.copy(vstup_subor, vystup_zlozka)
   return
   
-def log(log_file, text):
-  #concat pripoj text k suboru log_file 
+def log(log_file, xml_file):
+  with open(log_file, "a+") as log:
+      err_message = ("Neplatny kod ambulancie v subore " + str(xml_file) +"\n")
+      formated_date_time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+      log.write( "[  " + formated_date_time + "  ]" + "  :" + "  " + err_message ) 
   return
 
 def main():
@@ -48,7 +52,7 @@ def main():
       print(full_path_to_file)
       sr_kod = get_sr_kod_from_xml(full_path_to_file)
       name = get_name_from_xml(full_path_to_file)
-      print(sr_kod)
+#      print(sr_kod)
       if sr_kod == "P21697208301":
         copy_file_to_dir(full_path_to_file, dial_directory)        
       elif sr_kod == "P21697063201":
@@ -56,7 +60,7 @@ def main():
       elif sr_kod == "P21697063203":
         copy_file_to_dir(full_path_to_file, amb2_directory)
       else:
-        log("log.txt","chybny sr_kod " + str(sr_kod) + " v subore " + str(xml_file) +"\n")
+        log("log.txt", xml_file)
   return
   
 main()
