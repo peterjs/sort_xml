@@ -1,5 +1,5 @@
 # coding=utf-8
-import os, fnmatch, shutil
+import os, fnmatch, shutil,sys
 
 def xmls_in_dir(directory):
   real_path = os.path.realpath(directory)
@@ -49,9 +49,9 @@ def log(log_file, text):
   return
 
 def main():
-  source_directory = "C:\\export_winlab_lab_lv"
-  amb_directory = "C:\\vysledky_amb"
-  dial_directory = "C:\\vysledky_dial"
+  source_directory = sys.argv[1]
+  amb_directory = sys.argv[2]
+  dial_directory = sys.argv[3]
   for xml_file in xmls_in_dir(source_directory):
     if check_xml(xml_file):
       full_path_to_file = os.path.join(source_directory,xml_file)
@@ -59,9 +59,9 @@ def main():
       sr_kod = get_sr_kod_from_xml(full_path_to_file)
       name = get_name_from_xml(full_path_to_file)
       print(sr_kod)
-      if sr_kod == "P21697208301" and name == "HESS":
+      if sr_kod == "P21697208301":
         copy_file_to_dir(full_path_to_file, dial_directory)        
-      elif sr_kod == "P21697063201" and name == "HESS":
+      elif sr_kod == "P21697063201":
         copy_file_to_dir(full_path_to_file, amb_directory)
       else:
         log("log.txt","chybny sr_kod " + str(sr_kod) + " v subore " + str(xml_file) +"\n")
