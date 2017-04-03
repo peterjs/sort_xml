@@ -27,19 +27,8 @@ def get_name_from_xml(xml_file):
   return get_value_from_xml_file(xml_file, ["HESS"])
 
 def get_sr_kod_from_xml(xml_file):
-  return get_value_from_xml_file(xml_file, ["P21697063201","P21697208301"])
+  return get_value_from_xml_file(xml_file, ["P21697063201","P21697208301","P21697063203"])
   
-def get_sr_kod_from_xml2(xml_file):
-  sr_kod = ""
-  f = open(xml_file, 'r')
-  lines = f.read()
-  if lines.find("P21697063201") != -1:
-    sr_kod = "P21697063201"
-  elif lines.find("P21697208301") != -1:
-    sr_kod = "P21697208301"
-  f.close()
-  return sr_kod
-
 def copy_file_to_dir(vstup_subor, vystup_zlozka):
   shutil.copy(vstup_subor, vystup_zlozka)
   return
@@ -51,7 +40,8 @@ def log(log_file, text):
 def main():
   source_directory = sys.argv[1]
   amb_directory = sys.argv[2]
-  dial_directory = sys.argv[3]
+  amb2_directory = sys.argv[3]
+  dial_directory = sys.argv[4]
   for xml_file in xmls_in_dir(source_directory):
     if check_xml(xml_file):
       full_path_to_file = os.path.join(source_directory,xml_file)
@@ -63,6 +53,8 @@ def main():
         copy_file_to_dir(full_path_to_file, dial_directory)        
       elif sr_kod == "P21697063201":
         copy_file_to_dir(full_path_to_file, amb_directory)
+	  elif sr_kod == "P21697063203":
+        copy_file_to_dir(full_path_to_file, amb2_directory)
       else:
         log("log.txt","chybny sr_kod " + str(sr_kod) + " v subore " + str(xml_file) +"\n")
   return
