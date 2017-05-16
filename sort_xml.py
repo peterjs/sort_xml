@@ -18,7 +18,6 @@ def check_xml(file):
 
 def read_xml():
   return
-  
 
 def get_value_from_xml_file(xml_file, values):
   found_value = ""
@@ -29,24 +28,35 @@ def get_value_from_xml_file(xml_file, values):
       found_value = value
   f.close()
   return found_value
-  
+
 def get_name_from_xml(xml_file):
   return get_value_from_xml_file(xml_file, ["HESS"])
 
 def get_sr_kod_from_xml(xml_file):
   return get_value_from_xml_file(xml_file, ["P21697063201","P21697208301","P21697063203"])
-  
+
+def modify_lab_test_codes(xml_file):
+  #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
+  tree = ET.parse(xml_file)
+  root = tree.getroot()
+  for lab_test in root.iter("vr"):
+    print(lab_test.get("id_lis"))
+    print(id_lis_map.get(lab_test.get("id_lis"),""))
+    print()
+    lab_test.set("klic_nclp", id_lis_map.get(lab_test.get("id_lis"),""))
+  tree.write(xml_file,encoding="cp1250")
+
 def copy_file_to_dir(vstup_subor, vystup_zlozka):
   shutil.copy(vstup_subor, vystup_zlozka)
   return
-  
+
 def log(log_file, xml_file):
   with open(log_file, "a+") as log:
       err_message = ("Neplatny kod ambulancie v subore " + str(xml_file) +"\n")
       formated_date_time = strftime("%Y-%m-%d %H:%M:%S", localtime())
-      log.write( "[  " + formated_date_time + "  ]" + "  :" + "  " + err_message ) 
+      log.write( "[  " + formated_date_time + "  ]" + "  :" + "  " + err_message )
   return
-  
+
 def help_syntax():
   print("python sort_xml.py source_directory  ambulance1_directory ambulance2_directory ambulance3_directory")
   return
