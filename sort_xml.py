@@ -9,14 +9,15 @@ def xmls_in_dir(directory):
   return []
 
 def check_xml(file):
-  return fnmatch.fnmatch(file, '*.xml')
-  
+  #lower() - fix pre macOS
+  return fnmatch.fnmatch(file.lower(), '*.xml')
+
 def read_xml():
   return
   
 def get_value_from_xml_file(xml_file, values):
   found_value = ""
-  f = open(xml_file, 'r')
+  f = open(xml_file, 'r', encoding="cp1250")
   lines = f.read()
   for value in values:
     if lines.find(value) != -1:
