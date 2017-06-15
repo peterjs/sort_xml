@@ -93,12 +93,12 @@ def modify_xml(xml_file, pids_list_path):
   tree.write(xml_file,encoding="cp1250")
 
 def get_datetime_from_filename(file_name):
-    file_name = sample_date_str = file_name.replace("PRO_OKB_00013_","")
-    file_name = sample_date_str = file_name.replace("PRO_OKB_00014_","")
-    date_re_pattern = re.compile("\A\d\d\d\d_\d\d_\d\d")
-    date_str = date_re_pattern.match(file_name).group()
-    sample_date = datetime.strptime(date_str,"%Y_%m_%d")
-    return sample_date
+  file_name = sample_date_str = file_name.replace("PRO_OKB_00013_","")
+  file_name = sample_date_str = file_name.replace("PRO_OKB_00014_","")
+  date_re_pattern = re.compile("\A\d\d\d\d_\d\d_\d\d")
+  date_str = date_re_pattern.match(file_name).group()
+  sample_date = datetime.strptime(date_str,"%Y_%m_%d")
+  return sample_date
 
 def copy_file_to_dir(vstup_subor, vystup_zlozka):
   shutil.copy(vstup_subor, vystup_zlozka)
