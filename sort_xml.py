@@ -82,6 +82,22 @@ def modify_patient_ids(xml_tree_node, pids_to_extend):
     if pid.text in pids_to_extend:
       pid.text = pid.text + "0"
 
+def get_lab_test_value(xml_tree_node, lab_test_name):
+  for lab_test in xml_tree_node.iter("vr"):
+    if lab_test.find("nazev_lclp").text == lab_test_name:
+      vrn = lab_test.find("vrn")
+      if vrn:
+        return vrn.find("hodnota").text
+      else:
+        return ""
+
+def set_lab_test_value(xml_tree_node, lab_test_name, value):
+  for lab_test in xml_tree_node.iter("vr"):
+    if lab_test.find("nazev_lclp").text == lab_test_name:
+      vrn = lab_test.find("vrn")
+      if vrn:
+        vrn.find("hodnota").text = value
+
 def modify_xml(xml_file, pids_list_path):
   #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
   tree = ET.parse(xml_file)
