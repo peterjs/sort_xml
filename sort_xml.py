@@ -98,6 +98,14 @@ def set_lab_test_value(xml_tree_node, lab_test_name, value):
       if vrn:
         vrn.find("hodnota").text = value
 
+def modify_b2m(xml_tree_node):
+  test_value = get_lab_test_value(xml_tree_node, "B2M")
+  if test_value:
+    test_value = test_value.replace(",",".")
+    new_test_value = str(round(float(test_value)*1000,2))
+    new_test_value = new_test_value.replace(".",",")
+    set_lab_test_value(root, "B2M", new_test_value)
+
 def modify_xml(xml_file, pids_list_path):
   #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
   tree = ET.parse(xml_file)
@@ -106,6 +114,7 @@ def modify_xml(xml_file, pids_list_path):
   modify_lab_test_codes(root)
   modify_lab_date(root)
   modify_patient_ids(root, load_patient_ids_to_extend(pids_list_path))
+  modify_b2m(root)
   tree.write(xml_file,encoding="cp1250")
 
 def get_datetime_from_filename(file_name):
