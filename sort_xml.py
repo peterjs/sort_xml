@@ -100,6 +100,11 @@ def get_datetime_from_filename(file_name):
   sample_date = datetime.strptime(date_str,"%Y_%m_%d")
   return sample_date
 
+def rm_from_dir(directory):
+  files = [os.path.join(directory, item) for item in os.listdir(directory)]
+  for f in files:
+    os.remove(f)
+
 def copy_file_to_dir(vstup_subor, vystup_zlozka):
   shutil.copy(vstup_subor, vystup_zlozka)
   return
@@ -121,24 +126,32 @@ def main():
   amb2_directory = sys.argv[3]
   dial_directory = sys.argv[4]
   pids_list_path = sys.argv[5]
+  #cleanup
+  if datetime.today().hour == 14:
+    rm_from_dir(amb_directory)
+    rm_from_dir(amb2_directory)
+    rm_from_dir(dial_directory)
   for xml_file in xmls_in_dir(source_directory):
     if check_xml(xml_file):
       full_path_to_file = os.path.join(source_directory,xml_file)
       print(full_path_to_file)
       sr_kod = get_sr_kod_from_xml(full_path_to_file)
       name = get_name_from_xml(full_path_to_file)
-#      print(sr_kod)
-      if sr_kod == "P21697208301":
-        copy_file_to_dir(full_path_to_file, dial_directory)
-        modify_xml(os.path.join(dial_directory,xml_file), pids_list_path)
-      elif sr_kod == "P21697063201":
-        copy_file_to_dir(full_path_to_file, amb_directory)
-        modify_xml(os.path.join(amb_directory,xml_file), pids_list_path)
-      elif sr_kod == "P21697063203":
-        copy_file_to_dir(full_path_to_file, amb2_directory)
-        modify_xml(os.path.join(amb2_directory,xml_file), pids_list_path)
-      else:
-        log("log.txt", xml_file)
+      get_datetime_from_filename(xml_file)
+      sample_age = datetime.today() - get_datetime_from_filename(xml_file)
+      if sample_age.days < 11:
+          #      print(sr_kod)
+        if sr_kod == "P21697208301":
+          copy_file_to_dir(full_path_to_file, dial_directory)
+          modify_xml(os.path.join(dial_directory,xml_file), pids_list_path)
+        elif sr_kod == "P21697063201":
+          copy_file_to_dir(full_path_to_file, amb_directory)
+          modify_xml(os.path.join(amb_directory,xml_file), pids_list_path)
+        elif sr_kod == "P21697063203":
+          copy_file_to_dir(full_path_to_file, amb2_directory)
+          modify_xml(os.path.join(amb2_directory,xml_file), pids_list_path)
+        else:
+          log("log.txt", xml_file)
   return
 
 main()
