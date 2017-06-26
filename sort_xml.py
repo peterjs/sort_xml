@@ -84,7 +84,8 @@ def modify_patient_ids(xml_tree_node, pids_to_extend):
 
 def get_lab_test_value(xml_tree_node, lab_test_name):
   for lab_test in xml_tree_node.iter("vr"):
-    if lab_test.find("nazev_lclp").text == lab_test_name:
+ #   if lab_test.find("nazev_lclp").text == lab_test_name:
+    if lab_test.get("id_lis") == lab_test_name:
       vrn = lab_test.find("vrn")
       if vrn:
         return vrn.find("hodnota").text
@@ -93,18 +94,28 @@ def get_lab_test_value(xml_tree_node, lab_test_name):
 
 def set_lab_test_value(xml_tree_node, lab_test_name, value):
   for lab_test in xml_tree_node.iter("vr"):
-    if lab_test.find("nazev_lclp").text == lab_test_name:
+ #   if lab_test.find("nazev_lclp").text == lab_test_name:
+    if lab_test.get("id_lis") == lab_test_name:
       vrn = lab_test.find("vrn")
       if vrn:
         vrn.find("hodnota").text = value
 
-def modify_b2m(xml_tree_node):
-  test_value = get_lab_test_value(xml_tree_node, "B2M")
+def modify_test_value(xml_tree_node, test_value_name, mod_function):
+  test_value = get_lab_test_value(xml_tree_node, test_value_name)
   if test_value:
     test_value = test_value.replace(",",".")
-    new_test_value = str(round(float(test_value)*1000,2))
+    new_test_value = str(mod_function(float(test_value)))
     new_test_value = new_test_value.replace(".",",")
-    set_lab_test_value(root, "B2M", new_test_value)
+    set_lab_test_value(xml_tree_node, test_value_name, new_test_value)
+        
+def modify_b2m(xml_tree_node):
+  modify_test_value(xml_tree_node, "B2M", lambda x: round(x*1000,2))
+#  test_value = get_lab_test_value(xml_tree_node, "B2M")
+#  if test_value:
+#    test_value = test_value.replace(",",".")
+#    new_test_value = str(round(float(test_value)*1000,2))
+#    new_test_value = new_test_value.replace(".",",")
+#    set_lab_test_value(root, "B2M", new_test_value)
 
 def modify_xml(xml_file, pids_list_path):
   #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
@@ -114,7 +125,14 @@ def modify_xml(xml_file, pids_list_path):
   modify_lab_test_codes(root)
   modify_lab_date(root)
   modify_patient_ids(root, load_patient_ids_to_extend(pids_list_path))
-  modify_b2m(root)
+ # modify_b2m(root)
+  modify_test_value(root, "S-B2M", lambda x: round(x/100,3))
+  modify_test_value(root, "TR H2O", lambda x: round(x/100,3))
+  modify_test_value(root, "FE Na", lambda x: round(x*100,2))
+  modify_test_value(root, "FE K", lambda x: round(x*100,2))
+  modify_test_value(root, "FE Cl", lambda x: round(x*100,2))
+  modify_test_value(root, "FE P", lambda x: round(x*100,2))
+  modify_test_value(root, "FE Ca", lambda x: round(x*100,2))
   tree.write(xml_file,encoding="cp1250")
 
 def get_datetime_from_filename(file_name):
