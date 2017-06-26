@@ -126,7 +126,7 @@ def modify_xml(xml_file, pids_list_path):
   modify_lab_date(root)
   modify_patient_ids(root, load_patient_ids_to_extend(pids_list_path))
  # modify_b2m(root)
-  modify_test_value(root, "S-B2M", lambda x: round(x/100,3))
+  modify_test_value(root, "S-B2M", lambda x: round(x/1000,3))
   modify_test_value(root, "TR H2O", lambda x: round(x/100,3))
   modify_test_value(root, "FE Na", lambda x: round(x*100,2))
   modify_test_value(root, "FE K", lambda x: round(x*100,2))
