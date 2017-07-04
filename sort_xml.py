@@ -188,7 +188,7 @@ def main(source_directory, amb_directory, amb2_directory, dial_directory, pids_l
       name = get_name_from_xml(full_path_to_file)
       get_datetime_from_filename(xml_file)
       sample_age = datetime.today() - get_datetime_from_filename(xml_file)
-      if sample_age.days < 31:
+      if sample_age.days < 11:
           #      print(sr_kod)
         if sr_kod == "P21697208301":
           copy_file_to_dir(full_path_to_file, dial_directory)
