@@ -58,7 +58,7 @@ def generate_html(table_values):
     }
     </style>
     <body>
-    <form action="http://localhost:8080/hello2" method="get">
+    <form action="hello2" method="get">
     <input type="submit" value="ulozit">
     <table>
     <tr>
@@ -101,7 +101,7 @@ def generate_html(table_values):
         except ValueError as e:
             print(val)
             print(e)
-        table_rows += "<tr><td><a href='" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
+        table_rows += "<tr><td><a href='hello3?file=" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
     html = head + table_rows + tail
     return html
 
@@ -112,10 +112,13 @@ def get_lab_test_types(xml_tree_node):
 
 def create_page(source_directory):
     name_dates = []
-    remamps = []
-    with open("date_remaps.txt","r") as date_remaps:
-        remaps = ast.literal_eval(date_remaps.readline())
-        remaps = dict(remaps)
+    remaps = {}
+    try:
+	    with open("date_remaps.txt","r") as date_remaps:
+	        remaps = ast.literal_eval(date_remaps.readline())
+	        remaps = dict(remaps)
+    except FileNotFoundError as fe:
+	    print("deta_remaps.txt does not exist")
     for xml_file in xmls_in_dir(source_directory):
         if check_xml(xml_file):
             full_path_to_file = os.path.join(source_directory,xml_file)

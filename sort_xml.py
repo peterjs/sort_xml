@@ -52,7 +52,7 @@ def modify_lab_test_codes(xml_tree_node):
 
 def modify_lab_date2(xml_tree_node, to_date):
   for parameter_date in xml_tree_node.iter("dat_du"):
-    #   print(parameter_date.text)
+    print(parameter_date.text)
     #   print(sample_date.strftime("%Y-%m-%dT%H:%M:%S"))
     parameter_date.text = to_date.strftime("%Y-%m-%dT23:59:59")
 
@@ -119,23 +119,25 @@ def modify_b2m(xml_tree_node):
 #    new_test_value = str(round(float(test_value)*1000,2))
 #    new_test_value = new_test_value.replace(".",",")
 #    set_lab_test_value(root, "B2M", new_test_value)
-
+ 
 def modify_xml(xml_file_dir, xml_file, pids_list_path):
-  #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
+ #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
   xml_file_joined = os.path.join(xml_file_dir, xml_file)
   tree = ET.parse(xml_file_joined)
   root = tree.getroot()
-  print(xml_get_patient_name(root))
-  modify_lab_test_codes(root)
-  modify_lab_date(root)
-  with open("date_remaps.txt","r") as date_remaps:
-    remaps = ast.literal_eval(str.lower(date_remaps.readline()))
-    remaps = dict(remaps)
-    # print(xml_file)
-    if remaps.get(str.lower(xml_file)):
-    #   print(remaps)
-      modify_lab_date2(root, datetime.strptime(remaps[str.lower(xml_file)],"%Y-%m-%d"))
-  modify_patient_ids(root, load_patient_ids_to_extend(pids_list_path))
+  modify_xml_common(root, xml_file, pids_list_path)
+  modify_xml_values(root)
+  tree.write(xml_file_joined,encoding="cp1250")  
+
+def modify_xml_witohut_values(xml_file_dir, xml_file, pids_list_path):
+ #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
+  xml_file_joined = os.path.join(xml_file_dir, xml_file)
+  tree = ET.parse(xml_file_joined)
+  root = tree.getroot()
+  modify_xml_common(root, xml_file, pids_list_path)
+  tree.write(xml_file_joined,encoding="cp1250")  
+  
+def modify_xml_values(root):
  # modify_b2m(root)
   modify_test_value(root, "S-B2M", lambda x: round(x/1000,3))
   modify_test_value(root, "TR H2O", lambda x: round(x/100,3))
@@ -144,7 +146,23 @@ def modify_xml(xml_file_dir, xml_file, pids_list_path):
   modify_test_value(root, "FE Cl", lambda x: round(x*100,2))
   modify_test_value(root, "FE P", lambda x: round(x*100,2))
   modify_test_value(root, "FE Ca", lambda x: round(x*100,2))
-  tree.write(xml_file_joined,encoding="cp1250")
+ 
+def modify_xml_common(root, xml_file, pids_list_path):
+  modify_lab_test_codes(root)
+  modify_lab_date(root)
+  try:
+    with open("date_remaps.txt","r") as date_remaps:
+      remaps = ast.literal_eval(str.lower(date_remaps.readline()))
+      remaps = dict(remaps)
+      #print(xml_file)
+      if remaps.get(str.lower(xml_file)):
+      #   print(remaps)
+        modify_lab_date2(root, datetime.strptime(remaps[str.lower(xml_file)],"%Y-%m-%d"))
+        #print("REMAPPING")
+        #print("REMAPPING")
+  except FileNotFoundError as fe:
+    print("deta_remaps.txt does not exist")
+  modify_patient_ids(root, load_patient_ids_to_extend(pids_list_path))
 
 def get_datetime_from_filename(file_name):
   file_name = sample_date_str = file_name.replace("PRO_OKB_00013_","")
@@ -172,6 +190,21 @@ def log(log_file, xml_file):
 
 def help_syntax():
   print("python sort_xml.py source_directory ambulance1_directory ambulance2_directory ambulance3_directory")
+  return
+  
+def change_dial_dates(dial_directory, pids_list_path):
+  for xml_file in xmls_in_dir(dial_directory):
+    if check_xml(xml_file):
+      full_path_to_file = os.path.join(dial_directory,xml_file)
+      print(full_path_to_file)
+      sr_kod = get_sr_kod_from_xml(full_path_to_file)
+      name = get_name_from_xml(full_path_to_file)
+      get_datetime_from_filename(xml_file)
+      sample_age = datetime.today() - get_datetime_from_filename(xml_file)
+      if sr_kod == "P21697208301":
+        modify_xml_witohut_values(dial_directory, xml_file, pids_list_path)
+      else:
+        log("log.txt", xml_file)
   return
 
 def main(source_directory, amb_directory, amb2_directory, dial_directory, pids_list_path):
