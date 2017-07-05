@@ -101,7 +101,7 @@ def generate_html(table_values):
         except ValueError as e:
             print(val)
             print(e)
-        table_rows += "<tr><td><a href='hello3?file=" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
+        table_rows += "<tr><td><a href='hello3?file=" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='checkbox' name='" + val[4] + "'><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
     html = head + table_rows + tail
     return html
 
