@@ -5,19 +5,21 @@ from pyramid.httpexceptions import HTTPFound, HTTPResetContent
 import lab_date_sheet
 from pyramid.response import Response
 import sort_xml
-import os
+import os, collections
 
 HD_LV = "C:\\Users\\admin\\laboratorne\\hd_lv"
 PIDS_LIST = "C:\\Users\\admin\\laboratorne\\pids_list.txt"
 HD_LV = "/Users/peter/Code/hd_lv/"
 HD_LV = "../hd_lv/"
+HD_LV_BLOCKED = "../hd_lv_blocked/"
 PIDS_LIST = "/Users/peter/Dropbox/it/laboratorne_lv/pids_list.txt"
+# BLOCK_LIST = "/Users/peter/Dropbox/it/laboratorne_lv/block_list.txt"
 #"http://192.168.48.242:8080"
 
 @view_config(route_name='hello')
 def hello_world(request):
     # return 'Hello World'
-    patient_table = lab_date_sheet.create_page(HD_LV)
+    patient_table = lab_date_sheet.create_page([HD_LV, HD_LV_BLOCKED])
     # return request.GET
     return Response(patient_table)
 
@@ -25,12 +27,28 @@ def hello_world(request):
 def hello_world2(request):
     #save to date_remaps.txt
     print(list(request.GET.items()))
+    with open("block_list.txt","w") as block_list:
+        block = [item[0][6:] for item in list(request.GET.items()) if item[0][0:5] == "block"]
+        block_list.write(str(block))
     with open("date_remaps.txt","w") as date_remaps:
-        multiple_dates_to_change = [(item[0],request.GET.get(item[0])) for item in list(request.GET.items()) if item[1] == "on"]
+        multiple_dates_to_change = [(item[0],request.GET.get(item[0])) for item in list(request.GET.items()) if item[1] == "on" and not item[0][0:5] == "block"]
         set_to_date = ""
+        #sorted(multiple_dates_to_change, key=lambda x: sort_xml.get_datetime_from_filename(x[0]))
+        full_paths = {}
+        for date_to_change in multiple_dates_to_change:
+            if os.path.exists(os.path.join(HD_LV, date_to_change[0])):
+                full_path = os.path.join(HD_LV, date_to_change[0])
+            else:
+                full_path = os.path.join(HD_LV_BLOCKED, date_to_change[0])
+            full_paths[date_to_change[0]] = full_path
+        #sorted(multiple_dates_to_change, key=lambda x: sort_xml.get_datetime_from_filename(x[0]))
+        multiple_dates_to_change = sorted(multiple_dates_to_change, key=lambda x: lab_date_sheet.sorting(x[0], full_paths[x[0]]))
         if len(multiple_dates_to_change):
             set_to_date = multiple_dates_to_change[0][1]
-        multiple_dates_to_change = {item[0]:set_to_date for item in multiple_dates_to_change}
+        #multiple_dates_to_change = {item[0]:set_to_date for item in multiple_dates_to_change}
+        multiple_dates_to_change = collections.OrderedDict(multiple_dates_to_change)
+        for date_key in multiple_dates_to_change.keys():
+            multiple_dates_to_change[date_key] = set_to_date
         mappings = [(item[0], multiple_dates_to_change.get(item[0], item[1])) for item in list(request.GET.items()) if item[1] != "on"]
         print("multiple_dates_to_change")
         print(multiple_dates_to_change)
@@ -40,7 +58,7 @@ def hello_world2(request):
         date_remaps.write(str(mappings))
     # return HTTPResetContent(location="file:///Users/peter/Code/sort_xml_peterjs/html_out.html")
     # sort_xml.main("C:\\Users\\admin\\ftpes_lab_vysledky", "C:\\Users\\admin\\laboratorne\\amb_lv", "C:\\Users\\admin\\laboratorne\\amb_zel", "C:\\Users\\admin\\laboratorne\\hd_lv", "C:\\Users\\admin\\laboratorne\\pids_list.txt")
-    sort_xml.change_dial_dates(HD_LV, PIDS_LIST)
+    sort_xml.change_dial_dates(HD_LV, HD_LV_BLOCKED , PIDS_LIST)
     return HTTPFound(location="http://localhost:8080")
     #return HTTPFound(location="")
 

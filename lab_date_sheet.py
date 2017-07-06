@@ -2,11 +2,12 @@ import os, fnmatch, sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import re, ast
+import sort_xml
 
 def xmls_in_dir(directory):
     real_path = os.path.realpath(directory)
     if os.path.exists(real_path):
-        return os.listdir(real_path)
+        return [f for f in os.listdir(real_path) if check_xml(f)]
     return []
 
 def check_xml(file):
@@ -48,8 +49,19 @@ def get_name_from_xml(xml_file):
 
 
 
+def sorting(xml_file, full_path_to_file):
+    #PRO_OKB_00013_
+    #PRO_OKB_00014_
+    print("full_path_to_file")
+    print(full_path_to_file)
+    name = sort_xml.xml_get_patient_name(full_path_to_file)
+    prefix = xml_file[:13]
+    sort_string = xml_file[14:] +  name + prefix
+    print("sort string")
+    print(sort_string)
+    return sort_string
 
-def generate_html(table_values):
+def generate_html(table_values, block_list):
     head = """<html>
     <style>
     table, th, td {
@@ -62,10 +74,14 @@ def generate_html(table_values):
     <input type="submit" value="ulozit">
     <table>
     <tr>
+      <col width="20">
       <col width="150">
       <col width="100">
       <col width="100">
       <col width="100">
+      <th>
+        blokovat
+      </th>
       <th>
         meno
       </th>
@@ -101,7 +117,11 @@ def generate_html(table_values):
         except ValueError as e:
             print(val)
             print(e)
-        table_rows += "<tr><td><a href='hello3?file=" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='checkbox' name='" + val[4] + "'><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
+        if str.lower(val[4]) in block_list:
+            checked = "checked"
+        else:
+            checked = ""
+        table_rows += "<tr><td><input type='checkbox' name='block_" + val[4] + "' " + checked + "></td><td><a href='hello3?file=" + val[2] + "'>" + val[0] + "</a></td><td>" + default_date2 + "</td><td bgcolor=" + bgcolor + ">" + default_date3 + "</td><td><input type='checkbox' name='" + val[4] + "'><input type='date' name='" + val[4] + "' value='" + default_date4 + "'></td><td>" + val[3] + "</td></tr>"
     html = head + table_rows + tail
     return html
 
@@ -110,7 +130,7 @@ def get_lab_test_types(xml_tree_node):
     for lab_test in xml_tree_node.iter("vr"):
         lab_test.get("id_lis")
 
-def create_page(source_directory):
+def create_page(source_directories):
     name_dates = []
     remaps = {}
     try:
@@ -119,9 +139,27 @@ def create_page(source_directory):
 	        remaps = dict(remaps)
     except FileNotFoundError as fe:
 	    print("deta_remaps.txt does not exist")
-    for xml_file in xmls_in_dir(source_directory):
+    with open("block_list.txt","r") as block_list_file:
+        block_list = ast.literal_eval(str.lower(block_list_file.readline()))
+    xmls = [xmls_in_dir(source_dir) for source_dir in source_directories]
+    xmls = [item for sublist in xmls for item in sublist]
+    #xmls = sorted(xmls, key=get_datetime_from_filename)
+    full_paths = {}
+    for xml in xmls:
+        if os.path.exists(os.path.join(source_directories[0], xml)):
+            full_path = os.path.join(source_directories[0], xml)
+        else:
+            full_path = os.path.join(source_directories[1], xml)
+        if sort_xml.check_xml(full_path):
+            full_paths[xml] = full_path
+        #sorted(multiple_dates_to_change, key=lambda x: sort_xml.get_datetime_from_filename(x[0]))
+    xmls = sorted(xmls, key=lambda x: sorting(x, full_paths[x]))
+    for xml_file in xmls:
         if check_xml(xml_file):
-            full_path_to_file = os.path.join(source_directory,xml_file)
+            if str.lower(xml_file) in block_list:
+                full_path_to_file = os.path.join(source_directories[1],xml_file)
+            else:
+                full_path_to_file = os.path.join(source_directories[0],xml_file)
             tree = ET.parse(full_path_to_file)
             root = tree.getroot()
             name = xml_get_patient_name(root)
@@ -131,7 +169,7 @@ def create_page(source_directory):
             name_dates.append((name, lab_datetime, full_path_to_file, str(get_lab_test_types(root)), xml_file, remaps.get(xml_file,"0000-00-00")))
             # print(get_lab_test_types(root))
             # print(generate_html(name_dates))
-    return generate_html(name_dates)
+    return generate_html(name_dates, block_list)
 
 if __name__ == '__main__':
     with open("html_out.html","w") as html_out:

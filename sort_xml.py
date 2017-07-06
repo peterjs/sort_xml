@@ -3,7 +3,7 @@ import os, fnmatch, shutil, sys
 from time import localtime, strftime
 import xml.etree.ElementTree as ET
 from datetime import datetime
-import re, ast
+import re, ast, os.path, shutil
 
 id_lis_map = {"HGB": "99901", "HTC": "99902", "WBC": "99903", "PLT": "99904", "RET%": "99905", "S-GLU": "01898", "S-UREA": "03085", "S-KREA": "01511", "S-KM ": "99910", "S-CB ": "99911", "S-ALB": "00504", "S-TBIL": "01153", "S-AST": "99914", "S-ALT": "99915", "S-GMT": "99916", "S-ALP": "99917", "S-CHOL": "99918", "S-TG ": "99919", "S-Fe": "99921", "S-TIBC": "99922", "S-FeSat": "99923", "S-FER": "99924", "S-Na": "99925", "S-K": "99926", "S-Ca": "99927", "S-Mg": "99928", "S-Cl": "99929", "S-P": "99930", "S-CRP hs": "99931","P-PTH": "99932", "S-B2M": "99933", "S-vit.D": "99934", "NEU %": "99939", "U-pH": "99802", "U-BIEL": "99803", "U-GLUK": "99804", "U-KETO ": "99805", "U-KRV": "99806", "U-BILI": "99807", "U-UBG": "99808", "U-ERY": "99812", "U-LEUK": "99813", "U-ValHYAL": "99814", "U-BAKT": "99815", "U-EPIpl": "99816", "GF mer": "99819", "GF korig": "99820", "GFkal muži": "99821", "GFkal ženy": "99821", "TR H2O": "99824", "dU CB": "99825", "U-Na": "99827", "U-K": "99828", "U-Ca": "99829", "U-Mg": "99830", "U-Cl": "99831", "U-P": "99832", "U-KREA": "99834", "FE Na": "99836", "FE K": "99837", "FE Cl": "99838", "FE P": "99839", "FE Ca": "99840"}
 
@@ -30,8 +30,8 @@ def get_value_from_xml_file(xml_file, values):
   f.close()
   return found_value
 
-def get_name_from_xml(xml_file):
-  return get_value_from_xml_file(xml_file, ["HESS"])
+#def get_name_from_xml(xml_file):
+#  return get_value_from_xml_file(xml_file, ["HESS"])
 
 def get_sr_kod_from_xml(xml_file):
   return get_value_from_xml_file(xml_file, ["P21697063201","P21697208301","P21697063203"])
@@ -43,7 +43,9 @@ def load_patient_ids_to_extend(pid_file):
       pids_list.append(pid.strip())
   return pids_list
 
-def xml_get_patient_name(root):
+def xml_get_patient_name(xml_file_full_path):
+  tree = ET.parse(xml_file_full_path)
+  root = tree.getroot()
   return root.find("is").find("ip").find("prijmeni").text
 
 def modify_lab_test_codes(xml_tree_node):
@@ -119,7 +121,7 @@ def modify_b2m(xml_tree_node):
 #    new_test_value = str(round(float(test_value)*1000,2))
 #    new_test_value = new_test_value.replace(".",",")
 #    set_lab_test_value(root, "B2M", new_test_value)
- 
+
 def modify_xml(xml_file_dir, xml_file, pids_list_path):
  #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
   xml_file_joined = os.path.join(xml_file_dir, xml_file)
@@ -127,16 +129,16 @@ def modify_xml(xml_file_dir, xml_file, pids_list_path):
   root = tree.getroot()
   modify_xml_common(root, xml_file, pids_list_path)
   modify_xml_values(root)
-  tree.write(xml_file_joined,encoding="cp1250")  
+  tree.write(xml_file_joined,encoding="cp1250")
 
-def modify_xml_witohut_values(xml_file_dir, xml_file, pids_list_path):
+def modify_xml_without_values(xml_file_dir, xml_file, pids_list_path):
  #with open(xml_file, "w+", encoding="cp1250") as lab_tests_file:
   xml_file_joined = os.path.join(xml_file_dir, xml_file)
   tree = ET.parse(xml_file_joined)
   root = tree.getroot()
   modify_xml_common(root, xml_file, pids_list_path)
-  tree.write(xml_file_joined,encoding="cp1250")  
-  
+  tree.write(xml_file_joined,encoding="cp1250")
+
 def modify_xml_values(root):
  # modify_b2m(root)
   modify_test_value(root, "S-B2M", lambda x: round(x/1000,3))
@@ -146,7 +148,7 @@ def modify_xml_values(root):
   modify_test_value(root, "FE Cl", lambda x: round(x*100,2))
   modify_test_value(root, "FE P", lambda x: round(x*100,2))
   modify_test_value(root, "FE Ca", lambda x: round(x*100,2))
- 
+
 def modify_xml_common(root, xml_file, pids_list_path):
   modify_lab_test_codes(root)
   modify_lab_date(root)
@@ -191,23 +193,36 @@ def log(log_file, xml_file):
 def help_syntax():
   print("python sort_xml.py source_directory ambulance1_directory ambulance2_directory ambulance3_directory")
   return
-  
-def change_dial_dates(dial_directory, pids_list_path):
-  for xml_file in xmls_in_dir(dial_directory):
+
+def change_dial_dates(dial_directory, dial_directory_blocked, pids_list_path):
+  block_list = []
+  with open("block_list.txt","r") as block_list_file:
+    block_list = ast.literal_eval(str.lower(block_list_file.readline()))
+  for xml_file in xmls_in_dir(dial_directory) + xmls_in_dir(dial_directory_blocked):
     if check_xml(xml_file):
-      full_path_to_file = os.path.join(dial_directory,xml_file)
+      if str.lower(xml_file) in block_list:
+        full_path_to_file = os.path.join(dial_directory_blocked,xml_file)
+        if not os.path.isfile(full_path_to_file):
+          shutil.move(os.path.join(dial_directory, xml_file), full_path_to_file)
+      else:
+        full_path_to_file = os.path.join(dial_directory,xml_file)
+        if not os.path.isfile(full_path_to_file):
+          shutil.move(os.path.join(dial_directory_blocked, xml_file), full_path_to_file)
       print(full_path_to_file)
       sr_kod = get_sr_kod_from_xml(full_path_to_file)
-      name = get_name_from_xml(full_path_to_file)
+#      name = get_name_from_xml(full_path_to_file)
       get_datetime_from_filename(xml_file)
       sample_age = datetime.today() - get_datetime_from_filename(xml_file)
       if sr_kod == "P21697208301":
-        modify_xml_witohut_values(dial_directory, xml_file, pids_list_path)
+        if str.lower(xml_file) in block_list:
+          modify_xml_without_values(dial_directory_blocked, xml_file, pids_list_path)
+        else:
+          modify_xml_without_values(dial_directory, xml_file, pids_list_path)
       else:
         log("log.txt", xml_file)
   return
 
-def main(source_directory, amb_directory, amb2_directory, dial_directory, pids_list_path):
+def main(source_directory, amb_directory, amb2_directory, dial_directory, dial_directory_blocked, pids_list_path):
   #cleanup
   if datetime.today().hour == 14:
     rm_from_dir(amb_directory)
@@ -218,7 +233,7 @@ def main(source_directory, amb_directory, amb2_directory, dial_directory, pids_l
       full_path_to_file = os.path.join(source_directory,xml_file)
       print(full_path_to_file)
       sr_kod = get_sr_kod_from_xml(full_path_to_file)
-      name = get_name_from_xml(full_path_to_file)
+      #name = get_name_from_xml(full_path_to_file)
       get_datetime_from_filename(xml_file)
       sample_age = datetime.today() - get_datetime_from_filename(xml_file)
       if sample_age.days < 11:
@@ -234,6 +249,18 @@ def main(source_directory, amb_directory, amb2_directory, dial_directory, pids_l
           modify_xml(amb2_directory, xml_file, pids_list_path)
         else:
           log("log.txt", xml_file)
+    with open("block_list.txt","r") as block_list_file:
+      block_list = ast.literal_eval(str.lower(block_list_file.readline()))
+    for xml_file in xmls_in_dir(dial_directory) + xmls_in_dir(dial_directory_blocked):
+      if check_xml(xml_file):
+        if str.lower(xml_file) in block_list:
+          full_path_to_file = os.path.join(dial_directory_blocked,xml_file)
+          if not os.path.isfile(full_path_to_file):
+            shutil.move(os.path.join(dial_directory, xml_file), full_path_to_file)
+        else:
+          full_path_to_file = os.path.join(dial_directory,xml_file)
+          if not os.path.isfile(full_path_to_file):
+            shutil.move(os.path.join(dial_directory_blocked, xml_file), full_path_to_file)
   return
 
 if __name__ == '__main__':
@@ -241,5 +268,6 @@ if __name__ == '__main__':
   amb_directory = sys.argv[2]
   amb2_directory = sys.argv[3]
   dial_directory = sys.argv[4]
-  pids_list_path = sys.argv[5]
-  main(source_directory, amb_directory, amb2_directory, dial_directory, pids_list_path)
+  dial_directory_blocked = sys.argv[5]
+  pids_list_path = sys.argv[6]
+  main(source_directory, amb_directory, amb2_directory, dial_directory, dial_directory_blocked, pids_list_path)
